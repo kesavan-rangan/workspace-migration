@@ -217,6 +217,21 @@ class LibraryExportTask(AbstractTask):
         cl_c.log_cluster_libs()
 
 
+class ReposExportTask(AbstractTask):
+    """Task that exports all clusters."""
+    def __init__(self, client_config, args, checkpoint_service, skip=False):
+        super().__init__("export_repos", wmconstants.WM_EXPORT, wmconstants.CLUSTER_OBJECT, skip)
+        self.client_config = client_config
+        self.args = args
+        self.checkpoint_service = checkpoint_service
+
+    def run(self):
+        repos_c = ReposClient(self.client_config, self.checkpoint_service)
+        # log the cluster json
+        repos_c.log_repos_list()
+        repos_c.log_repos_acl()
+
+
 class InstancePoolsExportTask(AbstractTask):
     """Task that exports all instance pools."""
     def __init__(self, client_config, args, checkpoint_service, skip=False):
@@ -254,6 +269,19 @@ class LibraryImportTask(AbstractTask):
     def run(self):
         cl_c = LibraryClient(self.client_config, self.checkpoint_service)
         cl_c.import_libraries()
+
+class ReposImportTask(AbstractTask):
+    """Task that exports all clusters."""
+    def __init__(self, client_config, args, checkpoint_service, skip=False):
+        super().__init__("import_repos", wmconstants.WM_EXPORT, wmconstants.CLUSTER_OBJECT, skip)
+        self.client_config = client_config
+        self.args = args
+        self.checkpoint_service = checkpoint_service
+
+    def run(self):
+        repos_c = ReposClient(self.client_config, self.checkpoint_service)
+        # log the cluster json
+        repos_c.import_repos_with_acl()
 
 
 class InstancePoolsImportTask(AbstractTask):

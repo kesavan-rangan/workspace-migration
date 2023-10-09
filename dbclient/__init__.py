@@ -11,3 +11,4 @@ from .SecretsClient import SecretsClient
 from .TableACLsClient import TableACLsClient
 from .MLFlowClient import MLFlowClient
 from .parser import *
+from .ReposClient import ReposClient

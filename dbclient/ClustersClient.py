@@ -167,6 +167,32 @@ class ClustersClient(dbclient):
             return list(running)
         else:
             return clusters_list
+    
+
+    def export_init_script(self, dbfs_path, init_script_dir='init_script_exports'):
+        init_scripts_export_path = os.path.join(self.get_export_dir(), init_script_dir)
+        if not os.path.exists(init_scripts_export_path):
+            os.makedirs(init_scripts_export_path)
+        
+        path_param = {"path": dbfs_path}
+        response = self.get('/dbfs/read', json_params=path_param)
+
+        file_name = os.path.basename(dbfs_path)
+        export_file_name = os.path.join(init_scripts_export_path, file_name)
+
+        with open(export_file_name, "wb") as fp:
+            fp.write(response.get("data").encode('utf-8'))
+        return
+    
+
+    def get_cluster_init_script(self, cluster_list):
+        for cluster in cluster_list:
+            init_scripts = cluster.get('init_scripts', [])
+            for script in init_scripts:
+                if 'dbfs' in script:
+                    script_dbfs_path = script.get('dbfs', {}).get('destination')
+                    self.export_init_script(script_dbfs_path)
+
 
     def get_execution_context(self, cid):
         logging.info("Creating remote Spark Session")
@@ -256,6 +282,20 @@ class ClustersClient(dbclient):
                 old_policy_id = policy_conf['policy_id']
                 policy_id_dict[old_policy_id] = current_policies_dict[policy_name] # old_id : new_id
         return policy_id_dict
+    
+    def import_cluster_init_script(self, dbfs_path, init_script_export_path='init_script_exports'):
+        init_script_path = self.get_export_dir() + init_script_export_path
+        file_name = os.path.basename(dbfs_path)
+
+        with open(os.path.join(init_script_path, file_name), "rb") as fp:
+            lib_file_data = fp.read().decode('utf-8')
+            split_path = os.path.split(dbfs_path)
+            create_dir = {"path": split_path[0]}
+            cl = self.post("/dbfs/mkdirs", json_params=create_dir)
+
+            content_info = {"path": dbfs_path, "contents": lib_file_data, "overwrite": True}
+            cl = self.post("/dbfs/put", json_params=content_info)
+
 
     def import_cluster_configs(self, log_file='clusters.log', acl_log_file='acl_clusters.log', filter_user=None):
         """
@@ -301,6 +341,15 @@ class ClustersClient(dbclient):
                     else:
                         cluster_conf['custom_tags'] = {'OriginalCreator': cluster_creator}
                     new_cluster_conf = cluster_conf
+                # Check if INIT scripts are enabled for the cluster and supporting the DBFS and Workspace based scripts
+                if "init_scripts" in cluster_conf:
+                    init_scripts = cluster_conf.get('init_scripts', [])
+                    for script in init_scripts:
+                        script_dbfs_path = None
+                        if 'dbfs' in script:
+                            script_dbfs_path = script.get('dbfs', {}).get('destination')
+                        if script_dbfs_path:
+                            self.import_cluster_init_script(script_dbfs_path)
                 print("Creating cluster: {0}".format(new_cluster_conf['cluster_name']))
                 cluster_resp = self.post('/clusters/create', new_cluster_conf)
                 if cluster_resp['http_status_code'] == 200:
@@ -582,6 +631,7 @@ class ClustersClient(dbclient):
         # pinned by cluster_user is a flag per cluster
         cl_raw = self.get_cluster_list(False)
         cluster_list = self.remove_automated_clusters(cl_raw)
+        self.get_cluster_init_script(cluster_list)
         ip_list = self.get('/instance-profiles/list').get('instance_profiles', [])
         nonempty_ip_list = []
         if ip_list:

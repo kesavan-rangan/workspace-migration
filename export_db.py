@@ -94,17 +94,25 @@ def main():
         end = timer()
         print("Complete Workspace Download Time: " + str(timedelta(seconds=end - start)))
 
-    if args.libs:
-        if not client_config['is_aws']:
-            print("Databricks does not support library exports on Azure or GCP today")
-        else:
-            print("Starting complete library log at {0}".format(now))
-            lib_c = LibraryClient(client_config)
-            start = timer()
-            lib_c.log_library_details()
-            lib_c.log_cluster_libs()
-            end = timer()
-            print("Complete Library Download Time: " + str(timedelta(seconds=end - start)))
+    # if args.libs:
+    #     if not client_config['is_aws']:
+    #         print("Databricks does not support library exports on Azure or GCP today")
+    #     else:
+    #         print("Starting complete library log at {0}".format(now))
+    #         lib_c = LibraryClient(client_config)
+    #         start = timer()
+    #         lib_c.log_library_details()
+    #         lib_c.log_cluster_libs()
+    #         end = timer()
+    #         print("Complete Library Download Time: " + str(timedelta(seconds=end - start)))
+    
+    print("Exporting Libaries")
+    lib_c = LibraryClient(client_config)
+    start = timer()
+    lib_c.log_library_details()
+    lib_c.log_cluster_libs()
+    end = timer()
+    print("Complete Library Download Time: " + str(timedelta(seconds=end - start)))
 
     if args.clusters:
         print("Export the cluster configs at {0}".format(now))

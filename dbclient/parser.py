@@ -9,6 +9,12 @@ auth_key = ['host',
             'username',
             'token']
 
+workload_options = [
+    "clusters",
+    "notebooks",
+    "jobs",
+    "repos"
+]
 
 class NotebookFormat(Enum):
     dbc = 'DBC'
@@ -171,6 +177,10 @@ def get_export_parser():
     parser.add_argument('--export-groups', action='store',
                         help='Group names to export as a set. Includes group, users, and notebooks.')
 
+    # Import users when importing to a workspace. By Default, the user import is disabled.
+    parser.add_argument('--include-user-import', action='store_false', default=False,
+                        help='Import users when importing to a workspace. By Default, the user import is disabled.')
+
     parser.add_argument('--workspace-acls', action='store_true',
                         help='Permissions for workspace objects to export')
 
@@ -248,6 +258,10 @@ def get_import_parser():
     # import all users and groups
     parser.add_argument('--users', action='store_true',
                         help='Import all the users and groups from the logfile.')
+
+    # Import users when importing to a workspace. By Default, the user import is disabled.
+    parser.add_argument('--include-user-import', action='store_false', default=False,
+                        help='Import users when importing to a workspace. By Default, the user import is disabled.')
 
     # import all notebooks
     parser.add_argument('--workspace', action='store_true',
@@ -530,6 +544,10 @@ def get_pipeline_parser() -> argparse.ArgumentParser:
 
     parser.add_argument('--import-pipeline', action='store_true',
                         help='Execute all import tasks.')
+
+    # Import users when importing to a workspace. By Default, the user import is disabled.
+    parser.add_argument('--include-user-import', action='store_true', default=False, dest="include_user_import",
+                        help='Import users when importing to a workspace. By Default, the user import is disabled.')
 
     parser.add_argument('--validate-pipeline', action='store_true',
                         help='Validate exported data between source and destination.')

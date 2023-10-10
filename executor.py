@@ -22,6 +22,8 @@ dbutils.widgets.text("destination_workspace_token_secret_name", "destination_tok
 
 # COMMAND ----------
 
+execution_context = str(uuid4())
+
 source_workspace_url = dbutils.widgets.get("source_workspace_url")
 source_token = dbutils.secrets.get(dbutils.widgets.get("source_workspace_token_secret_scope"), dbutils.widgets.get("source_workspace_token_secret_name"))
 
@@ -32,6 +34,7 @@ destination_token = dbutils.secrets.get(dbutils.widgets.get("destination_workspa
 
 import subprocess
 import os
+from uuid import uuid4
 
 # COMMAND ----------
 
@@ -39,11 +42,15 @@ import os
 
 # COMMAND ----------
 
-source_token_file_name = "source_token"
+TEMP_DIR = "/FileStore/temp/"
+if not os.path.exists(TEMP_DIR):
+    os.makedirs(TEMP_DIR)
+
+source_token_file_name = TEMP_DIR+"source_token"
 with open(source_token_file_name, "w") as f:
     f.write(source_token)
 
-destination_token_file_name = "destination_token"
+destination_token_file_name = TEMP_DIR+"destination_token"
 with open(destination_token_file_name, "w") as f:
     f.write(destination_token)
     
@@ -66,11 +73,27 @@ if destination_exec[0] == 0:
 
 # COMMAND ----------
 
-# Executing the import command
-import_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "source", "--export-pipeline"]
+# Executing the export command
+EXPORT_DIR_PATH = f"/FileStore/exports/{execution_context}"
 
-run_cmd(import_command)
+if not os.path.exists(EXPORT_DIR_PATH):
+    os.makedirs(EXPORT_DIR_PATH)
+export_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "source", "--export-pipeline", "--set-export-dir", EXPORT_DIR_PATH]
+
+response = run_cmd(export_command, stream_output=True)
+
+print(f"EXIT CODE - {response}")
 
 # COMMAND ----------
 
+# Executing the Import command
+EXPORT_DIR_PATH = f"/FileStore/exports/{execution_context}"
 
+EXPORT_DIR_PATH_UPDATED = os.path.join(EXPORT_DIR_PATH, os.listdir(EXPORT_DIR_PATH)[0])
+
+if not os.path.exists(EXPORT_DIR_PATH):
+    os.makedirs(EXPORT_DIR_PATH)
+import_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "destination", "--import-pipeline", "--set-export-dir", EXPORT_DIR_PATH_UPDATED, "--no-prompt", "--include-user-import"]
+
+response = run_cmd(import_command, stream_output=True)
+print(f"EXIT CODE - {response}")

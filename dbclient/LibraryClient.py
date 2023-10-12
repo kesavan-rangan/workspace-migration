@@ -103,7 +103,8 @@ class LibraryClient(dbclient):
 
     def export_dbfs_libaries(self, dbfs_path, dbfs_libraries_path="dbfs_libraries"):
         dbfs_lib_log_path = os.path.join(self.get_export_dir() + dbfs_libraries_path)
-        os.makedirs(dbfs_lib_log_path)
+        if not os.path.exists(dbfs_lib_log_path):
+            os.makedirs(dbfs_lib_log_path)
         dbfs_file_name = os.path.basename(dbfs_path)
         lib_req = self.get('/dbfs/read?path={}'.format(dbfs_path))
         with open(os.path.join(dbfs_lib_log_path, dbfs_file_name), "wb") as fp:

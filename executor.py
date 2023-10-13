@@ -64,9 +64,9 @@ destination_configure_command = ["databricks", "configure", "--profile", "destin
 source_exec = run_cmd(source_configure_command)
 destination_exec = run_cmd(destination_configure_command)
 
-if source_exec[0] == 0:
+if os.path.exists(source_token_file_name):
     os.remove(source_token_file_name)
-if destination_exec[0] == 0:
+if os.path.exists(destination_token_file_name):
     os.remove(destination_token_file_name)
 
 # COMMAND ----------
@@ -80,11 +80,9 @@ EXPORT_DIR_PATH = f"/FileStore/exports/{execution_context}"
 
 if not os.path.exists(EXPORT_DIR_PATH):
     os.makedirs(EXPORT_DIR_PATH)
-export_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "source", "--export-pipeline", "--set-export-dir", EXPORT_DIR_PATH]
+export_command = ["python3", "-u", "./migrate_pipeline_current.py", "--azure", "--profile", "source", "--export-pipeline", "--set-export-dir", EXPORT_DIR_PATH]
 
-response = run_cmd(export_command, stream_output=True)
-
-print(f"EXIT CODE - {response}")
+run_cmd(export_command)
 
 # COMMAND ----------
 
@@ -95,11 +93,6 @@ EXPORT_DIR_PATH_UPDATED = os.path.join(EXPORT_DIR_PATH, os.listdir(EXPORT_DIR_PA
 
 if not os.path.exists(EXPORT_DIR_PATH):
     os.makedirs(EXPORT_DIR_PATH)
-import_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "destination", "--import-pipeline", "--set-export-dir", EXPORT_DIR_PATH_UPDATED, "--no-prompt"]
+import_command = ["python3", "-u", "./migrate_pipeline_current.py", "--azure", "--profile", "destination", "--import-pipeline", "--set-export-dir", EXPORT_DIR_PATH_UPDATED, "--no-prompt", "--include-user-import"]
 
-response = run_cmd(import_command, stream_output=True)
-print(f"EXIT CODE - {response}")
-
-# COMMAND ----------
-
-
+run_cmd(import_command)

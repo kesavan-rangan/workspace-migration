@@ -22,6 +22,8 @@ dbutils.widgets.text("destination_workspace_token_secret_name", "destination_tok
 
 # COMMAND ----------
 
+from uuid import uuid4
+
 execution_context = str(uuid4())
 
 source_workspace_url = dbutils.widgets.get("source_workspace_url")
@@ -93,7 +95,11 @@ EXPORT_DIR_PATH_UPDATED = os.path.join(EXPORT_DIR_PATH, os.listdir(EXPORT_DIR_PA
 
 if not os.path.exists(EXPORT_DIR_PATH):
     os.makedirs(EXPORT_DIR_PATH)
-import_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "destination", "--import-pipeline", "--set-export-dir", EXPORT_DIR_PATH_UPDATED, "--no-prompt", "--include-user-import"]
+import_command = ["python3", "./migrate_pipeline_current.py", "--azure", "--profile", "destination", "--import-pipeline", "--set-export-dir", EXPORT_DIR_PATH_UPDATED, "--no-prompt"]
 
 response = run_cmd(import_command, stream_output=True)
 print(f"EXIT CODE - {response}")
+
+# COMMAND ----------
+
+
